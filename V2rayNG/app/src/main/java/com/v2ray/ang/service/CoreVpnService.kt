@@ -273,18 +273,21 @@ class CoreVpnService : VpnService(), ServiceControl {
                 // Jika config belum ada atau ada token JWT baru, jalankan register terlebih dahulu
                 if (!configFile.exists() || jwt.isNotBlank()) {
                     LogUtil.i(AppConfig.TAG, "Mendaftarkan perangkat ke Cloudflare Zero Trust via usque register...")
-                    val endpoint = mainProfile.usqueEndpoint.orEmpty().ifBlank {
-                        if (!mainProfile.server.isNullOrBlank()) "https://${mainProfile.server}" else ""
+                    val rawEndpoint = mainProfile.usqueEndpoint.orEmpty().ifBlank {
+                        mainProfile.server.orEmpty()
                     }
+                    val cleanHost = rawEndpoint.removePrefix("https://").removePrefix("http://").trimEnd('/')
+                    val endpointUrl = if (cleanHost.isNotEmpty()) "https://$cleanHost" else ""
+
                     val regCmd = mutableListOf(
                         usqueBin,
                         "register",
                         "-c", configFile.absolutePath,
                         "--accept-tos"
                     )
-                    if (endpoint.isNotBlank()) {
+                    if (cleanHost.isNotBlank()) {
                         regCmd.add("-e")
-                        regCmd.add(endpoint)
+                        regCmd.add(cleanHost)
                     }
                     if (jwt.isNotBlank()) {
                         regCmd.add("--jwt")
