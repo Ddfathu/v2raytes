@@ -70,13 +70,12 @@ class UrlSchemeActivity : BaseComponentActivity() {
     }
 
     private fun handleCloudflareWarpUri(uri: Uri) {
-        // Ambil string asli langsung dari Intent, jangan percaya uri.toString()
         val rawStr = intent?.dataString ?: uri.toString()
         val token = if (rawStr.contains("token=")) {
             rawStr.substringAfter("token=")
                   .substringBefore("&")
                   .substringBefore("#")
-                  .substringBefore(""")
+                  .substringBefore("\"")
                   .substringBefore("'")
                   .trim()
         } else {
