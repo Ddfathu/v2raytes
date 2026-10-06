@@ -266,28 +266,57 @@ class CoreVpnService : VpnService(), ServiceControl {
                     return
                 }
 
-                val endpoint = mainProfile.usqueEndpoint ?: "https://ddfathu.cloudflareaccess.com"
+                val configFile = File(filesDir, "usque_config.json")
                 val jwt = mainProfile.usqueJwt.orEmpty()
                 val sni = mainProfile.sni
 
+                // Jika config belum ada atau ada token JWT baru, jalankan register terlebih dahulu
+                if (!configFile.exists() || jwt.isNotBlank()) {
+                    LogUtil.i(AppConfig.TAG, "Mendaftarkan perangkat ke Cloudflare Zero Trust via usque register...")
+                    val regCmd = mutableListOf(
+                        usqueBin,
+                        "register",
+                        "-c", configFile.absolutePath,
+                        "--accept-tos"
+                    )
+                    if (jwt.isNotBlank()) {
+                        regCmd.add("--jwt")
+                        regCmd.add(jwt)
+                    }
+
+                    try {
+                        val regProcess = ProcessBuilder(regCmd).redirectErrorStream(true).start()
+                        regProcess.waitFor()
+                        LogUtil.i(AppConfig.TAG, "Registrasi usque selesai dengan exit code: ${regProcess.exitValue()}")
+                        // Kosongkan token agar tidak register berulang kali
+                        if (jwt.isNotBlank() && regProcess.exitValue() == 0) {
+                            mainProfile.usqueJwt = ""
+                            com.v2ray.ang.handler.MmkvManager.encodeServerConfig(mainStorage?.currentServer ?: "", mainProfile)
+                        }
+                    } catch (e: Exception) {
+                        LogUtil.e(AppConfig.TAG, "Gagal registrasi usque", e)
+                    }
+                }
+
+                // Jalankan daemon SOCKS menggunakan config yang sudah terdaftar
                 val cmd = mutableListOf(
                     usqueBin,
-                    "socks-proxy",
-                    "--listen", "${AppConfig.LOOPBACK}:${AppConfig.PORT_SOCKS}",
-                    "--endpoint", endpoint,
-                    "--jwt", jwt
+                    "socks",
+                    "-b", AppConfig.LOOPBACK,
+                    "-p", AppConfig.PORT_SOCKS.toString(),
+                    "-c", configFile.absolutePath
                 )
 
                 if (mainProfile.usqueUseH2 == true) {
-                    cmd.add("--h2")
+                    cmd.add("--http2")
                 }
 
                 if (!sni.isNullOrBlank()) {
-                    cmd.add("--sni")
+                    cmd.add("-s")
                     cmd.add(sni)
                 }
 
-                LogUtil.i(AppConfig.TAG, "Starting Usque daemon...")
+                LogUtil.i(AppConfig.TAG, "Starting Usque socks daemon...")
                 usqueProcess = ProcessBuilder(cmd).start()
                 // Sleep briefly to let local socks port bind
                 Thread.sleep(300)
