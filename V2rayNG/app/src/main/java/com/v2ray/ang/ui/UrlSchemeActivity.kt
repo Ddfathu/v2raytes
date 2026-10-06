@@ -107,7 +107,7 @@ class UrlSchemeActivity : BaseComponentActivity() {
             val savedGuid = targetGuid ?: java.util.UUID.randomUUID().toString()
             MmkvManager.encodeServerConfig(savedGuid, profileToSave)
             if (targetGuid == null) {
-                MmkvManager.encodeServerList("", (allGuids + savedGuid).toMutableList())
+                MmkvManager.encodeServerList((allGuids + savedGuid).toMutableList(), "")
             }
             MmkvManager.setSelectServer(savedGuid)
 
