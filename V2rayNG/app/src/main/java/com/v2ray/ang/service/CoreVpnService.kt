@@ -270,8 +270,14 @@ class CoreVpnService : VpnService(), ServiceControl {
                 val jwt = mainProfile.usqueJwt.orEmpty()
                 val sni = mainProfile.sni
 
-                // Jika config belum ada atau ada token JWT baru, jalankan register terlebih dahulu
-                if (!configFile.exists() || jwt.isNotBlank()) {
+                // Bersihkan file jika ukurannya 0 byte
+                if (configFile.exists() && configFile.length() == 0L) {
+                    configFile.delete()
+                }
+
+                // Hanya register jika file config belum ada atau kosong
+                val needRegister = !configFile.exists() || configFile.length() == 0L
+                if (needRegister) {
                     LogUtil.i(AppConfig.TAG, "Mendaftarkan perangkat ke Cloudflare Zero Trust via usque register...")
                     val rawEndpoint = mainProfile.usqueEndpoint.orEmpty().ifBlank {
                         mainProfile.server.orEmpty()
@@ -312,9 +318,10 @@ class CoreVpnService : VpnService(), ServiceControl {
                 }
 
                 // Jalankan daemon SOCKS menggunakan config yang sudah terdaftar
-                val endpoint = mainProfile.usqueEndpoint.orEmpty().ifBlank {
-                    if (!mainProfile.server.isNullOrBlank()) "https://${mainProfile.server}" else ""
+                val rawEp = mainProfile.usqueEndpoint.orEmpty().ifBlank {
+                    mainProfile.server.orEmpty()
                 }
+                val endpoint = rawEp.removePrefix("https://").removePrefix("http://").trimEnd('/')
                 val cmd = mutableListOf(
                     usqueBin,
                     "socks",

@@ -70,13 +70,21 @@ class UrlSchemeActivity : BaseComponentActivity() {
     }
 
     private fun handleCloudflareWarpUri(uri: Uri) {
-        val rawUri = uri.toString()
-        val token = if (rawUri.contains("token=")) {
-            rawUri.substringAfter("token=").substringBefore("&").trim()
+        // Ambil string asli langsung dari Intent, jangan percaya uri.toString()
+        val rawStr = intent?.dataString ?: uri.toString()
+        val token = if (rawStr.contains("token=")) {
+            rawStr.substringAfter("token=")
+                  .substringBefore("&")
+                  .substringBefore("#")
+                  .substringBefore(""")
+                  .substringBefore("'")
+                  .trim()
         } else {
             uri.getQueryParameter("token").orEmpty().trim()
         }
-        val host = uri.host.orEmpty()
+        val host = uri.host.orEmpty().ifEmpty {
+            rawStr.substringAfter("://").substringBefore("/").substringBefore("?")
+        }
         val endpoint = if (host.isNotEmpty()) "https://$host" else ""
 
         if (token.isEmpty()) {
