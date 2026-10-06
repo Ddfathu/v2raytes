@@ -306,7 +306,7 @@ class CoreVpnService : VpnService(), ServiceControl {
                     usqueBin,
                     "socks",
                     "-b", AppConfig.LOOPBACK,
-                    "-p", AppConfig.PORT_SOCKS.toString(),
+                    "-p", "20808",
                     "-c", configFile.absolutePath
                 )
 

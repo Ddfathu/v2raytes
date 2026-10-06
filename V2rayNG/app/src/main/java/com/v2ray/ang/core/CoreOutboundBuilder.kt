@@ -125,7 +125,7 @@ object CoreOutboundBuilder {
         val outboundBean = createInitOutbound(EConfigType.USQUE)
         outboundBean?.settings?.let { settings ->
             settings.address = AppConfig.LOOPBACK
-            settings.port = AppConfig.PORT_SOCKS.toInt()
+            settings.port = 20808
             settings.level = AppConfig.DEFAULT_LEVEL
         }
         return outboundBean
