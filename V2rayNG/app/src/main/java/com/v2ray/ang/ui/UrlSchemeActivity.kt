@@ -103,6 +103,12 @@ class UrlSchemeActivity : BaseComponentActivity() {
             if (endpoint.isNotEmpty()) {
                 profileToSave.usqueEndpoint = endpoint
             }
+            if (profileToSave.server.isNullOrEmpty()) {
+                profileToSave.server = host
+            }
+            if (profileToSave.serverPort.isNullOrEmpty()) {
+                profileToSave.serverPort = "443"
+            }
 
             profileToSave.description = AngConfigManager.generateDescription(profileToSave)
             val savedGuid = MmkvManager.encodeServerConfig(targetGuid ?: "", profileToSave)

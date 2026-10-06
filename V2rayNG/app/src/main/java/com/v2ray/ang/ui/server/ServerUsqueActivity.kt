@@ -125,4 +125,26 @@ class ServerUsqueActivity : BaseServerActivity() {
             }
         }
     }
+
+    override fun validateBasicConfig(state: ServerUiState): Boolean {
+        if (state.remarks.isBlank()) {
+            state.isRemarksError = true
+            return false
+        }
+        if (state.usqueEndpoint.isBlank()) {
+            return false
+        }
+        // Sinkronisasi server & port agar valid di level core v2rayNG
+        val cleanHost = state.usqueEndpoint.trim()
+            .replace("https://", "")
+            .replace("http://", "")
+            .split("/")[0]
+            .split(":")[0]
+
+        state.server = if (state.sni.isNotBlank()) state.sni.trim() else cleanHost
+        if (state.port.isBlank()) {
+            state.port = "443"
+        }
+        return true
+    }
 }
