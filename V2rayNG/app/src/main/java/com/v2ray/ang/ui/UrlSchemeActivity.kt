@@ -3,13 +3,17 @@ package com.v2ray.ang.ui
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.lifecycle.lifecycleScope
 import com.v2ray.ang.AppConfig
 import com.v2ray.ang.R
+import com.v2ray.ang.dto.entities.ProfileItem
+import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.extension.toast
 import com.v2ray.ang.extension.toastError
 import com.v2ray.ang.handler.AngConfigManager
+import com.v2ray.ang.handler.MmkvManager
 import com.v2ray.ang.ui.base.BaseComponentActivity
 import com.v2ray.ang.ui.main.MainActivity
 import com.v2ray.ang.util.LogUtil
@@ -31,21 +35,24 @@ class UrlSchemeActivity : BaseComponentActivity() {
                         }
                     }
                 } else if (action == Intent.ACTION_VIEW) {
-                    when (data?.host) {
-                        "install-config" -> {
-                            val uri: Uri? = intent.data
-                            val shareUrl = uri?.getQueryParameter("url").orEmpty()
-                            parseUri(shareUrl, uri?.fragment)
-                        }
+                    val uri: Uri? = intent.data
+                    if (uri?.scheme == "com.cloudflare.warp") {
+                        handleCloudflareWarpUri(uri)
+                    } else {
+                        when (uri?.host) {
+                            "install-config" -> {
+                                val shareUrl = uri.getQueryParameter("url").orEmpty()
+                                parseUri(shareUrl, uri.fragment)
+                            }
 
-                        "install-sub" -> {
-                            val uri: Uri? = intent.data
-                            val shareUrl = uri?.getQueryParameter("url").orEmpty()
-                            parseUri(shareUrl, uri?.fragment)
-                        }
+                            "install-sub" -> {
+                                val shareUrl = uri.getQueryParameter("url").orEmpty()
+                                parseUri(shareUrl, uri.fragment)
+                            }
 
-                        else -> {
-                            toastError(R.string.toast_failure)
+                            else -> {
+                                toastError(R.string.toast_failure)
+                            }
                         }
                     }
                 }
@@ -60,6 +67,58 @@ class UrlSchemeActivity : BaseComponentActivity() {
 
     @Composable
     override fun ScreenContent() {
+    }
+
+    private fun handleCloudflareWarpUri(uri: Uri) {
+        val token = uri.getQueryParameter("token").orEmpty()
+        val host = uri.host.orEmpty()
+        val endpoint = if (host.isNotEmpty()) "https://$host" else ""
+
+        if (token.isEmpty()) {
+            Toast.makeText(this, "JWT Token kosong!", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        lifecycleScope.launch(Dispatchers.IO) {
+            val allGuids = MmkvManager.decodeServerList()
+            var targetGuid: String? = null
+            var targetProfile: ProfileItem? = null
+
+            for (guid in allGuids) {
+                val profile = MmkvManager.decodeServerConfig(guid)
+                if (profile?.configType == EConfigType.USQUE) {
+                    targetGuid = guid
+                    targetProfile = profile
+                    break
+                }
+            }
+
+            val profileToSave = targetProfile ?: ProfileItem.create(EConfigType.USQUE)
+            profileToSave.remarks = if (targetProfile != null && !targetProfile.remarks.isNullOrEmpty()) {
+                targetProfile.remarks
+            } else {
+                "Cloudflare Access ($host)"
+            }
+            profileToSave.usqueJwt = token
+            if (endpoint.isNotEmpty()) {
+                profileToSave.usqueEndpoint = endpoint
+            }
+
+            val savedGuid = targetGuid ?: java.util.UUID.randomUUID().toString()
+            MmkvManager.encodeServerConfig(savedGuid, profileToSave)
+            if (targetGuid == null) {
+                MmkvManager.encodeServerList(allGuids + savedGuid)
+            }
+            MmkvManager.encodeSelectServer(savedGuid)
+
+            withContext(Dispatchers.Main) {
+                Toast.makeText(
+                    this@UrlSchemeActivity,
+                    "Berhasil import token JWT Usque!",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
     }
 
     private fun parseUri(uriString: String?, fragment: String?) {
