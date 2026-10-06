@@ -87,9 +87,13 @@ class UrlSchemeActivity : BaseComponentActivity() {
             for (guid in allGuids) {
                 val profile = MmkvManager.decodeServerConfig(guid)
                 if (profile?.configType == EConfigType.USQUE) {
-                    targetGuid = guid
-                    targetProfile = profile
-                    break
+                    val sameEndpoint = endpoint.isNotEmpty() && profile.usqueEndpoint == endpoint
+                    val sameHost = profile.server == host
+                    if (sameEndpoint || sameHost) {
+                        targetGuid = guid
+                        targetProfile = profile
+                        break
+                    }
                 }
             }
 
@@ -112,6 +116,10 @@ class UrlSchemeActivity : BaseComponentActivity() {
 
             profileToSave.description = AngConfigManager.generateDescription(profileToSave)
             val savedGuid = MmkvManager.encodeServerConfig(targetGuid ?: "", profileToSave)
+            if (targetGuid == null) {
+                allGuids.add(0, savedGuid)
+                MmkvManager.encodeServerList(allGuids, "")
+            }
             MmkvManager.setSelectServer(savedGuid)
 
             withContext(Dispatchers.Main) {
