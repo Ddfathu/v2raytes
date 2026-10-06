@@ -11,6 +11,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.saveable.rememberSaveable
+import com.v2ray.ang.dto.entities.ProfileItem
 import com.v2ray.ang.enums.EConfigType
 import com.v2ray.ang.ui.compose.FormTextField
 
@@ -21,7 +22,7 @@ class ServerUsqueActivity : BaseServerActivity() {
     override fun ScreenContent() {
         val uiState = rememberSaveable(saver = ServerUiState.Saver) {
             ServerUiState.from(
-                initialConfig = initialConfig
+                initialConfig = initialConfig ?: ProfileItem.create(serverConfigType)
             )
         }.apply {
             configType = serverConfigType

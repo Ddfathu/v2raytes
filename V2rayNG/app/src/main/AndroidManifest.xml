@@ -364,6 +364,10 @@
                 android:resource="@xml/cache_paths" />
         </provider>
 
+        <activity
+            android:name="com.v2ray.ang.ui.server.ServerUsqueActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
     </application>
 
 </manifest>
