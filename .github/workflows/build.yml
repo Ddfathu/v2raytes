@@ -64,6 +64,16 @@ jobs:
           curl -L -o ${{ github.workspace }}/V2rayNG/app/libs/libv2ray.aar \
             "https://github.com/2dust/AndroidLibXrayLite/releases/download/${CURRENT_TAG}/libv2ray.aar"
 
+      - name: Ensure Gradle Wrapper Exists
+        run: |
+          mkdir -p ${{ github.workspace }}/V2rayNG/gradle/wrapper
+          if [ ! -f "${{ github.workspace }}/V2rayNG/gradle/wrapper/gradle-wrapper.jar" ]; then
+            echo "gradle-wrapper.jar not found, downloading..."
+            curl -L -o ${{ github.workspace }}/V2rayNG/gradle/wrapper/gradle-wrapper.jar \
+              "https://raw.githubusercontent.com/gradle/gradle/v8.10.2/gradle/wrapper/gradle-wrapper.jar"
+          fi
+          ls -lh ${{ github.workspace }}/V2rayNG/gradle/wrapper/
+
       - name: Build Debug APK
         run: |
           cd ${{ github.workspace }}/V2rayNG
