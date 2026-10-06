@@ -80,7 +80,7 @@ class UrlSchemeActivity : BaseComponentActivity() {
         }
 
         lifecycleScope.launch(Dispatchers.IO) {
-            val allGuids = MmkvManager.decodeServerList()
+            val allGuids = MmkvManager.decodeServerList("")
             var targetGuid: String? = null
             var targetProfile: ProfileItem? = null
 
@@ -107,9 +107,9 @@ class UrlSchemeActivity : BaseComponentActivity() {
             val savedGuid = targetGuid ?: java.util.UUID.randomUUID().toString()
             MmkvManager.encodeServerConfig(savedGuid, profileToSave)
             if (targetGuid == null) {
-                MmkvManager.encodeServerList(allGuids + savedGuid)
+                MmkvManager.encodeServerList("", (allGuids + savedGuid).toMutableList())
             }
-            MmkvManager.encodeSelectServer(savedGuid)
+            MmkvManager.setSelectServer(savedGuid)
 
             withContext(Dispatchers.Main) {
                 Toast.makeText(

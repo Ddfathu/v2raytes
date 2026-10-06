@@ -291,7 +291,10 @@ class CoreVpnService : VpnService(), ServiceControl {
                         // Kosongkan token agar tidak register berulang kali
                         if (jwt.isNotBlank() && regProcess.exitValue() == 0) {
                             mainProfile.usqueJwt = ""
-                            com.v2ray.ang.handler.MmkvManager.encodeServerConfig(mainStorage?.currentServer ?: "", mainProfile)
+                            val currentGuid = com.v2ray.ang.handler.MmkvManager.getSelectServer() ?: ""
+                            if (currentGuid.isNotEmpty()) {
+                                com.v2ray.ang.handler.MmkvManager.encodeServerConfig(currentGuid, mainProfile)
+                            }
                         }
                     } catch (e: Exception) {
                         LogUtil.e(AppConfig.TAG, "Gagal registrasi usque", e)
@@ -306,6 +309,12 @@ class CoreVpnService : VpnService(), ServiceControl {
                     "-p", AppConfig.PORT_SOCKS.toString(),
                     "-c", configFile.absolutePath
                 )
+
+                val port = mainProfile.serverPort?.toIntOrNull() ?: 443
+                if (port != 443) {
+                    cmd.add("-P")
+                    cmd.add(port.toString())
+                }
 
                 if (mainProfile.usqueUseH2 == true) {
                     cmd.add("--http2")

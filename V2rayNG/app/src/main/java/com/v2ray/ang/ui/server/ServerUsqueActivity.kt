@@ -85,8 +85,8 @@ class ServerUsqueActivity : BaseServerActivity() {
 
             FormTextField(
                 label = "Connect Port (Default: 443)",
-                value = uiState.serverPort,
-                onValueChange = { uiState.serverPort = it }
+                value = uiState.port,
+                onValueChange = { uiState.port = it }
             )
 
             FormTextField(
