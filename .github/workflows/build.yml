@@ -53,8 +53,11 @@ jobs:
 
       - name: Fetch AndroidLibXrayLite Tag & Download Core
         run: |
+          if [ ! -d "AndroidLibXrayLite" ] || [ ! -d "AndroidLibXrayLite/.git" ]; then
+            git clone --depth 1 https://github.com/2dust/AndroidLibXrayLite.git AndroidLibXrayLite
+          fi
           pushd AndroidLibXrayLite
-          CURRENT_TAG=$(git describe --tags --abbrev=0)
+          CURRENT_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v2.0.0")
           popd
           echo "Using Tag: $CURRENT_TAG"
           mkdir -p ${{ github.workspace }}/V2rayNG/app/libs
