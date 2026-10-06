@@ -270,12 +270,13 @@ class CoreVpnService : VpnService(), ServiceControl {
                 val jwt = mainProfile.usqueJwt.orEmpty()
                 val sni = mainProfile.sni
 
-                // Bersihkan file jika ukurannya 0 byte
-                if (configFile.exists() && configFile.length() == 0L) {
+                // Jika ada JWT baru, hapus config lama agar Usque tidak minta konfirmasi interaktif (y/n)
+                if (jwt.isNotBlank() && configFile.exists()) {
+                    configFile.delete()
+                } else if (configFile.exists() && configFile.length() == 0L) {
                     configFile.delete()
                 }
 
-                // Hanya register jika file config belum ada atau kosong
                 val needRegister = !configFile.exists() || configFile.length() == 0L
                 if (needRegister) {
                     LogUtil.i(AppConfig.TAG, "Mendaftarkan perangkat ke Cloudflare Zero Trust via usque register...")
