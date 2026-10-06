@@ -25,7 +25,8 @@ clear_tmp () {
 }
 trap 'echo -e "Aborted, error $? in command: $BASH_COMMAND"; trap ERR; clear_tmp; exit 1' ERR INT
 
-ABIS="armeabi-v7a arm64-v8a x86 x86_64"
+# Hanya kompilasi arm64-v8a dan armeabi-v7a
+ABIS="arm64-v8a armeabi-v7a"
 
 mkdir -p "$TMPDIR/jni"
 pushd "$TMPDIR"

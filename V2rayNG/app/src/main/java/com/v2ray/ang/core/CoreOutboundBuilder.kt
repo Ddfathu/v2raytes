@@ -456,7 +456,7 @@ object CoreOutboundBuilder {
 
             NetworkType.GRPC.type -> {
                 val grpcSetting = OutboundBean.StreamSettingsBean.GrpcSettingsBean()
-                grpcSetting.multiMode = mode == "multi"
+                grpcSetting.multiMode = profileItem.mode == "multi"
                 grpcSetting.serviceName = serviceName.orEmpty()
                 grpcSetting.authority = authority.orEmpty()
                 grpcSetting.idle_timeout = 60
