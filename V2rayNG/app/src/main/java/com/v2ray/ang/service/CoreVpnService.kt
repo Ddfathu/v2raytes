@@ -291,10 +291,6 @@ class CoreVpnService : VpnService(), ServiceControl {
                         "-c", configFile.absolutePath,
                         "--accept-tos"
                     )
-                    if (cleanHost.isNotBlank()) {
-                        regCmd.add("-e")
-                        regCmd.add(cleanHost)
-                    }
                     if (jwt.isNotBlank()) {
                         regCmd.add("--jwt")
                         regCmd.add(jwt)

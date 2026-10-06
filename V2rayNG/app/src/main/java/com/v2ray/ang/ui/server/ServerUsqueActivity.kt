@@ -131,14 +131,9 @@ class ServerUsqueActivity : BaseServerActivity() {
                                 usqueBin,
                                 "register",
                                 "-c", configFile.absolutePath,
-                                "--accept-tos"
+                                "--accept-tos",
+                                "--jwt", rawJwt
                             )
-                            if (cleanHost.isNotBlank()) {
-                                regCmd.add("-e")
-                                regCmd.add(cleanHost)
-                            }
-                            regCmd.add("--jwt")
-                            regCmd.add(rawJwt)
 
                             val process = ProcessBuilder(regCmd)
                                 .redirectErrorStream(true)
