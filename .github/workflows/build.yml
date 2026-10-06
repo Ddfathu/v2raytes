@@ -1,0 +1,102 @@
+name: Build dfathuv2ray APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          submodules: 'recursive'
+          fetch-depth: '0'
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Golang
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Install Android NDK
+        run: |
+          echo "y" | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            --channel=0 \
+            --install "ndk;29.0.14206865"
+          echo "NDK_HOME=$ANDROID_HOME/ndk/29.0.14206865" >> $GITHUB_ENV
+          sed -i '10i\ndkVersion = "29.0.14206865"' ${{ github.workspace }}/V2rayNG/app/build.gradle.kts || true
+
+      - name: Compile libhevtun
+        run: |
+          chmod +x compile-hevtun.sh || true
+          bash compile-hevtun.sh
+          mkdir -p ${{ github.workspace }}/V2rayNG/app/libs
+          cp -r ${{ github.workspace }}/libs/* ${{ github.workspace }}/V2rayNG/app/libs/ 2>/dev/null || true
+
+      - name: Build Usque Binary (libusque.so)
+        run: |
+          git clone https://github.com/Diniboy1123/usque.git usque-src
+          cd usque-src
+          CGO_ENABLED=0 GOOS=android GOARCH=arm64 go build -trimpath -ldflags="-s -w" -o libusque.so .
+          cd ..
+          mkdir -p ${{ github.workspace }}/V2rayNG/app/src/main/jniLibs/arm64-v8a
+          cp usque-src/libusque.so ${{ github.workspace }}/V2rayNG/app/src/main/jniLibs/arm64-v8a/libusque.so
+          ls -la ${{ github.workspace }}/V2rayNG/app/src/main/jniLibs/arm64-v8a/
+
+      - name: Fetch AndroidLibXrayLite Tag & Download Core
+        run: |
+          pushd AndroidLibXrayLite
+          CURRENT_TAG=$(git describe --tags --abbrev=0)
+          popd
+          echo "Using Tag: $CURRENT_TAG"
+          mkdir -p ${{ github.workspace }}/V2rayNG/app/libs
+          curl -L -o ${{ github.workspace }}/V2rayNG/app/libs/libv2ray.aar \
+            "https://github.com/2dust/AndroidLibXrayLite/releases/download/${CURRENT_TAG}/libv2ray.aar"
+
+      - name: Build Debug APK
+        run: |
+          cd ${{ github.workspace }}/V2rayNG
+          echo "sdk.dir=${ANDROID_HOME}" > local.properties
+          chmod +x gradlew
+          ./gradlew assembleFdroidDebug --no-daemon
+
+      - name: Sign APK Permanently (arm64-v8a only)
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 -d > release.keystore
+            BUILD_TOOLS_VERSION=$(ls $ANDROID_HOME/build-tools | tail -n 1)
+            APKSIGNER="$ANDROID_HOME/build-tools/$BUILD_TOOLS_VERSION/apksigner"
+            for apk in ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/fdroid/debug/*arm64-v8a*.apk; do
+              if [ -f "$apk" ]; then
+                echo "Signing $apk..."
+                $APKSIGNER sign --ks release.keystore \
+                  --ks-pass pass:"$KEYSTORE_PASSWORD" \
+                  --ks-key-alias "$KEY_ALIAS" \
+                  --key-pass pass:"$KEY_PASSWORD" \
+                  "$apk"
+              fi
+            done
+          else
+            echo "Signing secret not configured, skipping sign..."
+          fi
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: dfathuv2ray-arm64-v8a
+          path: ${{ github.workspace }}/V2rayNG/app/build/outputs/apk/fdroid/debug/*arm64-v8a*.apk
+          retention-days: 7

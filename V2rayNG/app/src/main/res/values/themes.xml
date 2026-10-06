@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Palet Warna: Ungu, Merah & Silver -->
+    <color name="theme_purple">#7B1FA2</color>
+    <color name="theme_purple_dark">#4A148C</color>
+    <color name="theme_red_accent">#E53935</color>
+    <color name="silver_light">#F1F5F9</color>
+    <color name="silver_surface">#E2E8F0</color>
+    <color name="silver_dark">#1E293B</color>
+
+    <!-- Background Window -->
+    <color name="window_background_light">@color/silver_light</color>
+    <color name="window_background_dark">@color/silver_dark</color>
+
+    <style name="AppThemeBase" parent="Theme.AppCompat.DayNight.NoActionBar">
+        <!-- Status Bar & Nav Bar -->
+        <item name="android:statusBarColor">@color/theme_purple_dark</item>
+        <item name="android:navigationBarColor">@color/silver_surface</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">true</item>
+        <item name="android:windowBackground">@color/window_background_light</item>
+
+        <!-- AppCompat Color Scheme yang Sah -->
+        <item name="colorPrimary">@color/theme_purple</item>
+        <item name="colorPrimaryDark">@color/theme_purple_dark</item>
+        <item name="colorAccent">@color/theme_red_accent</item>
+    </style>
+
+    <style name="AppThemeDayNight" parent="AppThemeBase" />
+
+    <style name="AppThemeDayNight.NoActionBar" parent="AppThemeBase" />
+
+    <style name="AppThemeDayNight.NoActionBar.Translucent" parent="AppThemeBase">
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowIsTranslucent">true</item>
+    </style>
+</resources>
