@@ -104,11 +104,8 @@ class UrlSchemeActivity : BaseComponentActivity() {
                 profileToSave.usqueEndpoint = endpoint
             }
 
-            val savedGuid = targetGuid ?: java.util.UUID.randomUUID().toString()
-            MmkvManager.encodeServerConfig(savedGuid, profileToSave)
-            if (targetGuid == null) {
-                MmkvManager.encodeServerList((allGuids + savedGuid).toMutableList(), "")
-            }
+            profileToSave.description = AngConfigManager.generateDescription(profileToSave)
+            val savedGuid = MmkvManager.encodeServerConfig(targetGuid ?: "", profileToSave)
             MmkvManager.setSelectServer(savedGuid)
 
             withContext(Dispatchers.Main) {
@@ -117,6 +114,11 @@ class UrlSchemeActivity : BaseComponentActivity() {
                     "Berhasil import token JWT Usque!",
                     Toast.LENGTH_LONG
                 ).show()
+                val intent = Intent(this@UrlSchemeActivity, MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                startActivity(intent)
+                finish()
             }
         }
     }
